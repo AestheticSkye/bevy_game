@@ -1,12 +1,12 @@
-use bevy::prelude::*;
-use bevy::window::PrimaryWindow;
+mod map;
 
-const TILE_SIZE: f32 = 50.0;
+use bevy::prelude::*;
+use map::MapPlugin;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
-        .add_systems(Startup, (setup, spawn_tiles))
+        .add_plugins((DefaultPlugins, MapPlugin))
+        .add_systems(Startup, setup)
         .add_systems(Update, sprite_movement)
         .run();
 }
@@ -27,30 +27,6 @@ fn setup(mut commands: Commands) {
         },
         Player,
     ));
-}
-
-fn spawn_tiles(mut commands: Commands, window: Query<&Window, With<PrimaryWindow>>) {
-    let window = window.single();
-    let (width, height) = (window.width(), window.height());
-
-    let horizontal_tile_count = ((width / TILE_SIZE).floor() + 1.) as i32;
-    let vertical_tile_count = ((height / TILE_SIZE).floor() + 1.) as i32;
-
-    for row in -vertical_tile_count / 2..vertical_tile_count / 2 {
-        for column in -horizontal_tile_count / 2..horizontal_tile_count / 2 {
-            let color = Color::rgb(rand::random(), rand::random(), rand::random());
-
-            commands.spawn(SpriteBundle {
-                sprite: Sprite { color, ..default() },
-                transform: Transform {
-                    translation: Vec3::new(column as f32 * TILE_SIZE, row as f32 * TILE_SIZE, -1.0),
-                    rotation:    Quat::default(),
-                    scale:       Vec3::new(TILE_SIZE, TILE_SIZE, 0.0),
-                },
-                ..default()
-            });
-        }
-    }
 }
 
 const PLAYER_SPEED: f32 = 200.;
