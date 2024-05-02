@@ -7,8 +7,16 @@ edition = "2021"
 
 [dependencies]
 bevy = "0.13.2"
+bevy-inspector-egui = "0.24.0"
+imageproc = "0.23.0"
 rand = "0.8.5"
+rayon = "1.10.0"
+strum = { version = "0.26.2", features = ["derive"] }
 worldgen = "0.5.3"
+
+[dependencies.image]
+version = "0.24.7"
+default-features = false
 
 [dev-dependencies]
 bevy = { version = "0.13.2", features = ["dynamic_linking"] }
