@@ -92,8 +92,9 @@ fn update_chunks(
 
     let mut grid = HashSet::with_capacity((horizontal_chunk_count * vertical_chunk_count) as usize);
 
-    for x in start_x..=end_x {
-        for y in start_y..=end_y {
+    // Todo: fix the math bove so the added positions isnt needed.
+    for x in start_x - 1..=end_x + 2 {
+        for y in start_y - 1..=end_y + 2 {
             grid.insert(Position { x, y });
         }
     }
@@ -140,7 +141,12 @@ fn update_chunks(
 
     let end = Instant::now();
 
-    debug!("Spent {:?} spawning {} chunks", end - start, count);
+    debug!(
+        "Spent {:?} spawning {} chunks, for a total of {} loaded",
+        end - start,
+        count,
+        chunk_positions.len()
+    );
 }
 
 /// Generates a `Chunk` from the noisemap for a given position.
@@ -209,7 +215,7 @@ fn chunk_to_image(chunk: &Chunk) -> Image {
         return Image::from_dynamic(dyn_image, true, RenderAssetUsages::RENDER_WORLD);
     }
 
-    for (row_index, row) in chunk.0.iter().enumerate() {
+    for (row_index, row) in chunk.0.iter().rev().enumerate() {
         for (tile_index, tile_type) in row.iter().enumerate() {
             let color: Color = tile_type.into();
 
