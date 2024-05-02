@@ -51,7 +51,7 @@ fn generate_noise_map() -> NoiseMap {
 
     NoiseMap(
         noisemap::NoiseMap::new(noise)
-        .set(Seed::of(rand::random::<i64>())) // Todo: Convert this into a propper seet system
+        .set(Seed::of(rand::random::<i64>())) // Todo: Convert this into a proper seed system
         .set(Size::of(CHUNK_TILE_COUNT as i64, CHUNK_TILE_COUNT as i64))
         .set(Step::of(0.01, 0.01)),
     )
@@ -204,7 +204,7 @@ fn spawn_chunk(
 fn chunk_to_image(chunk: &Chunk) -> Image {
     let mut dyn_image = DynamicImage::new_rgb16(CHUNK_SIZE as u32, CHUNK_SIZE as u32);
 
-    // Short circuit and fill image completly with one colour if all tiles are the same.
+    // Short circuit and fill image completely with one colour if all tiles are the same.
     if let Some(tile_type) = chunk.is_uniform_type() {
         let color: Color = tile_type.into();
         draw_filled_rect_mut(
