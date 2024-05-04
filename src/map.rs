@@ -7,7 +7,6 @@ use std::time::Instant;
 use bevy::prelude::*;
 use bevy::render::render_asset::RenderAssetUsages;
 use bevy::utils::{HashMap, HashSet};
-use bevy::window::PrimaryWindow;
 use image::{DynamicImage, Rgba};
 use imageproc::drawing::draw_filled_rect_mut;
 use imageproc::rect::Rect;
@@ -64,17 +63,20 @@ fn update_chunks(
     mut assets: ResMut<Assets<Image>>,
     noisemap: Res<NoiseMap>,
     camera_transform: Query<&Transform, (With<Camera>, Without<Player>)>,
-    window: Query<&Window, With<PrimaryWindow>>,
+    camera_projection: Query<&OrthographicProjection, With<Camera>>,
 ) {
     let Ok(camera_transform) = camera_transform.get_single() else {
         return;
     };
 
-    let Ok(window) = window.get_single() else {
+    let Ok(camera_projection) = camera_projection.get_single() else {
         return;
     };
 
-    let (width, height) = (window.width(), window.height());
+    let (width, height) = (
+        camera_projection.area.width(),
+        camera_projection.area.height(),
+    );
 
     let horizontal_chunk_count = (width / CHUNK_SIZE) as i32 + 1;
     let vertical_chunk_count = (height / CHUNK_SIZE) as i32 + 1;

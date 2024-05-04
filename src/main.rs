@@ -1,9 +1,11 @@
+mod camera;
 mod map;
 mod player;
 
 use bevy::log::LogPlugin;
 use bevy::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use camera::CameraPlugin;
 use map::MapPlugin;
 use player::PlayerPlugin;
 
@@ -19,6 +21,7 @@ fn main() {
                 .set(ImagePlugin::default_nearest()),
             MapPlugin,
             PlayerPlugin,
+            CameraPlugin,
         ))
         .add_plugins(WorldInspectorPlugin::new())
         .run();
