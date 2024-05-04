@@ -1,5 +1,5 @@
 mod chunk;
-mod position;
+pub mod position;
 mod tile_type;
 
 use std::time::Instant;
@@ -19,10 +19,10 @@ use worldgen::world::Size;
 use self::chunk::Chunk;
 use self::position::Position;
 use self::tile_type::TileType;
-use crate::Player;
+use crate::player::{sprite_movement, Player};
 
 /// Size of a tile in pixels.
-const TILE_SIZE: f32 = 15.0;
+pub const TILE_SIZE: f32 = 15.0;
 /// The amount of tiles in a chunk.
 const CHUNK_TILE_COUNT: usize = 20;
 /// Size of a chunk in pixels.
@@ -34,7 +34,7 @@ impl Plugin for MapPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(generate_noise_map())
             .insert_resource(TileSet::default())
-            .add_systems(Update, update_chunks);
+            .add_systems(Update, update_chunks.after(sprite_movement));
     }
 }
 
@@ -92,7 +92,7 @@ fn update_chunks(
 
     let mut grid = HashSet::with_capacity((horizontal_chunk_count * vertical_chunk_count) as usize);
 
-    // Todo: fix the math bove so the added positions isnt needed.
+    // Todo: fix the math above so the added positions isnt needed.
     for x in start_x - 1..=end_x + 2 {
         for y in start_y - 1..=end_y + 2 {
             grid.insert(Position { x, y });
@@ -200,7 +200,7 @@ fn spawn_chunk(
     tileset.spawned_chunks.insert(position, chunk_id);
 }
 
-///
+/// Convert a [Chunk] and its data into a bevy [bevy_render::texture::image::Image] to be used for creating textures.
 fn chunk_to_image(chunk: &Chunk) -> Image {
     let mut dyn_image = DynamicImage::new_rgb16(CHUNK_SIZE as u32, CHUNK_SIZE as u32);
 
@@ -212,7 +212,7 @@ fn chunk_to_image(chunk: &Chunk) -> Image {
             Rect::at(0, 0).of_size(CHUNK_SIZE as u32, CHUNK_SIZE as u32),
             Rgba(color.as_rgba_u8()),
         );
-        return Image::from_dynamic(dyn_image, true, RenderAssetUsages::RENDER_WORLD);
+        return Image::from_dynamic(dyn_image, false, RenderAssetUsages::RENDER_WORLD);
     }
 
     for (row_index, row) in chunk.0.iter().rev().enumerate() {
