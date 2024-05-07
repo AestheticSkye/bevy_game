@@ -20,7 +20,13 @@ default-features = false
 
 [dev-dependencies]
 bevy = { version = "0.13.2", features = ["dynamic_linking"] }
-sha256 = "1.5.0"
+
+[profile.release]
+lto = true
+opt-level = 3
+codegen-units = 1
+incremental = false
+debug = false
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]

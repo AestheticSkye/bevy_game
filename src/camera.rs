@@ -1,5 +1,3 @@
-#![allow(clippy::neg_cmp_op_on_partial_ord)]
-
 use bevy::prelude::*;
 
 pub struct CameraPlugin;
@@ -25,6 +23,7 @@ fn update_zoom(
     if projection.scale >= 0.25 && keyboard_input.pressed(KeyCode::Equal) {
         projection.scale -= 1.0 * time.delta_seconds();
     }
+
     if projection.scale <= 3.0 && keyboard_input.pressed(KeyCode::Minus) {
         projection.scale += 1.0 * time.delta_seconds();
     }
