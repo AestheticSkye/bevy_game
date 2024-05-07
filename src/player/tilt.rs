@@ -2,6 +2,9 @@ use bevy::prelude::*;
 
 use super::{Direction, Player};
 
+const TILT_SPEED: f32 = 0.25;
+const TILT_RADIUS: f32 = 0.3;
+
 #[derive(Component)]
 pub struct TiltTimer {
     timer:     Timer,
@@ -35,11 +38,11 @@ pub fn tilt_sprite(
     if tilt.timer.finished() {
         let mut transform = Transform::default();
         match tilt.direction {
-            Direction::Right => transform.rotate_z(0.3),
-            Direction::Left => transform.rotate_z(-0.3),
+            Direction::Right => transform.rotate_z(TILT_RADIUS),
+            Direction::Left => transform.rotate_z(-TILT_RADIUS),
         }
         player_transform.rotation = transform.rotation;
-        *tilt = TiltTimer::new(tilt.direction.next(), 0.25)
+        *tilt = TiltTimer::new(tilt.direction.next(), TILT_SPEED)
     }
 
     if !keyboard_input.any_pressed([
