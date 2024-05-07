@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use super::{Direction, Player};
 
 const TILT_SPEED: f32 = 0.25;
-const TILT_RADIUS: f32 = 0.3;
+const TILT_RADIUS: f32 = 0.25;
 
 #[derive(Component)]
 pub struct TiltTimer {

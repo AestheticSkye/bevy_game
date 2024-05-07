@@ -89,13 +89,13 @@ pub fn sprite_movement(
     if keyboard_input.any_pressed([KeyCode::ArrowUp, KeyCode::KeyW]) {
         direction += Vec3::new(0.0, 1.0, 0.0);
         if player.tilt.is_none() {
-            player.tilt = Some(TiltTimer::new(Direction::Right, 0.0));
+            player.tilt = Some(TiltTimer::new(player.facing_direction, 0.0));
         }
     }
     if keyboard_input.any_pressed([KeyCode::ArrowDown, KeyCode::KeyS]) {
         direction += Vec3::new(0.0, -1.0, 0.0);
         if player.tilt.is_none() {
-            player.tilt = Some(TiltTimer::new(Direction::Right, 0.0));
+            player.tilt = Some(TiltTimer::new(player.facing_direction.next(), 0.0));
         }
     }
 
