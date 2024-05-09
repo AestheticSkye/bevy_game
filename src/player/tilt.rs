@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use bevy::prelude::*;
 
 use super::{Direction, Player};
@@ -12,9 +14,9 @@ pub struct TiltTimer {
 }
 
 impl TiltTimer {
-    pub fn new(direction: Direction, duration: f32) -> Self {
+    pub fn new(direction: Direction) -> Self {
         TiltTimer {
-            timer: Timer::from_seconds(duration, TimerMode::Repeating),
+            timer: Timer::from_seconds(0.0, TimerMode::Repeating),
             direction,
         }
     }
@@ -42,7 +44,9 @@ pub fn tilt_sprite(
             Direction::Left => transform.rotate_z(-TILT_RADIUS),
         }
         player_transform.rotation = transform.rotation;
-        *tilt = TiltTimer::new(tilt.direction.next(), TILT_SPEED)
+        // Make sure the timer has a proper timings after
+        tilt.timer.set_duration(Duration::from_secs_f32(TILT_SPEED));
+        tilt.direction = tilt.direction.next();
     }
 
     if !keyboard_input.any_pressed([
