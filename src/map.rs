@@ -1,4 +1,5 @@
 mod chunk;
+pub mod config;
 pub mod position;
 mod tile_type;
 
@@ -16,28 +17,31 @@ use worldgen::noisemap::{self, NoiseMapGenerator, NoiseMapGeneratorBase, Seed, S
 use worldgen::world::Size;
 
 use self::chunk::Chunk;
+use self::config::MapConfig;
 use self::position::Position;
 use self::tile_type::TileType;
 use crate::player::{sprite_movement, Player};
-
-/// Size of a tile in pixels.
-pub const TILE_SIZE: f32 = 15.0;
-/// The amount of tiles in a chunk.
-const CHUNK_TILE_COUNT: usize = 20;
-/// Size of a chunk in pixels.
-const CHUNK_SIZE: f32 = CHUNK_TILE_COUNT as f32 * TILE_SIZE;
 
 pub struct MapPlugin;
 
 impl Plugin for MapPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(generate_noise_map())
+        app.add_event::<ChunkReloadEvent>()
             .insert_resource(TileSet::default())
-            .add_systems(Update, update_chunks.after(sprite_movement));
+            .insert_resource(MapConfig::default())
+            .insert_resource(NoiseMap::default())
+            .add_systems(Startup, init_noise_map)
+            .add_systems(
+                Update,
+                (chunk_reload, update_chunks).chain().after(sprite_movement),
+            );
     }
 }
 
-#[derive(Resource)]
+#[derive(Event)]
+pub struct ChunkReloadEvent;
+
+#[derive(Resource, Default)]
 struct NoiseMap(noisemap::NoiseMap<PerlinNoise>);
 
 #[derive(Resource, Default)]
@@ -45,15 +49,28 @@ struct TileSet {
     spawned_chunks: HashMap<Position, Entity>,
 }
 
-fn generate_noise_map() -> NoiseMap {
+fn init_noise_map(mut noisemap: ResMut<NoiseMap>, config: Res<MapConfig>) {
     let noise = PerlinNoise::new();
 
-    NoiseMap(
-        noisemap::NoiseMap::new(noise)
+    noisemap.0 = noisemap::NoiseMap::new(noise)
         .set(Seed::of(rand::random::<i64>())) // Todo: Convert this into a proper seed system
-        .set(Size::of(CHUNK_TILE_COUNT as i64, CHUNK_TILE_COUNT as i64))
-        .set(Step::of(0.01, 0.01)),
-    )
+        .set(Size::of(config.chunk_tile_count as i64, config.chunk_tile_count as i64))
+        .set(Step::of(0.01, 0.01));
+}
+
+fn chunk_reload(
+    mut commands: Commands,
+    mut ev_chunk_reload: EventReader<ChunkReloadEvent>,
+    mut tileset: ResMut<TileSet>,
+) {
+    if !ev_chunk_reload.is_empty() {
+        debug!("Unloading all chunks");
+        for (_, chunk) in &tileset.spawned_chunks {
+            commands.entity(*chunk).despawn();
+        }
+        tileset.spawned_chunks.clear();
+        ev_chunk_reload.clear()
+    }
 }
 
 /// System to spawn and despawn the games chunks depending on camera placement.
@@ -61,6 +78,7 @@ fn update_chunks(
     mut commands: Commands,
     mut tileset: ResMut<TileSet>,
     mut assets: ResMut<Assets<Image>>,
+    config: Res<MapConfig>,
     noisemap: Res<NoiseMap>,
     camera_transform: Query<&Transform, (With<Camera>, Without<Player>)>,
     camera_projection: Query<&OrthographicProjection, With<Camera>>,
@@ -78,14 +96,16 @@ fn update_chunks(
         camera_projection.area.height(),
     );
 
-    let horizontal_chunk_count = (width / CHUNK_SIZE) as i32 + 1;
-    let vertical_chunk_count = (height / CHUNK_SIZE) as i32 + 1;
+    let horizontal_chunk_count = (width / config.chunk_size()) as i32 + 1;
+    let vertical_chunk_count = (height / config.chunk_size()) as i32 + 1;
 
-    let camera_pos: Position = (
-        camera_transform.translation.x,
-        camera_transform.translation.y,
-    )
-        .into();
+    let camera_pos = Position::from_xy(
+        (
+            camera_transform.translation.x,
+            camera_transform.translation.y,
+        ),
+        &config,
+    );
 
     let start_x = camera_pos.x - horizontal_chunk_count / 2;
     let end_x = camera_pos.x + horizontal_chunk_count / 2;
@@ -126,8 +146,8 @@ fn update_chunks(
     let chunk_package: Vec<(Position, Chunk, Image)> = to_spawn
         .par_iter()
         .map(|position| {
-            let chunk = generate_chunk(*position, &noisemap.0);
-            let texture = chunk_to_image(&chunk);
+            let chunk = generate_chunk(*position, &noisemap.0, &config);
+            let texture = chunk_to_image(&chunk, &config);
             (*position, chunk, texture)
         })
         .collect();
@@ -138,7 +158,14 @@ fn update_chunks(
         .into_iter()
         .for_each(|(position, chunk, texture)| {
             let texture = assets.add(texture);
-            spawn_chunk(&mut commands, &mut tileset, chunk, texture, position)
+            spawn_chunk(
+                &mut commands,
+                &mut tileset,
+                &config,
+                chunk,
+                texture,
+                position,
+            )
         });
 
     let end = Instant::now();
@@ -152,10 +179,14 @@ fn update_chunks(
 }
 
 /// Generates a `Chunk` from the noisemap for a given position.
-fn generate_chunk(position: Position, noisemap: &noisemap::NoiseMap<PerlinNoise>) -> Chunk {
+fn generate_chunk(
+    position: Position,
+    noisemap: &noisemap::NoiseMap<PerlinNoise>,
+    config: &MapConfig,
+) -> Chunk {
     let chunk_noise = noisemap.generate_chunk(position.x as i64, position.y as i64);
 
-    let mut tiles = [[TileType::Grass; CHUNK_TILE_COUNT]; CHUNK_TILE_COUNT];
+    let mut tiles = vec![vec![TileType::Grass; config.chunk_tile_count]; config.chunk_tile_count];
 
     for (row_index, row) in chunk_noise.iter().enumerate() {
         for (tile_index, tile) in row.iter().enumerate() {
@@ -173,15 +204,18 @@ fn generate_chunk(position: Position, noisemap: &noisemap::NoiseMap<PerlinNoise>
 fn spawn_chunk(
     commands: &mut Commands,
     tileset: &mut ResMut<TileSet>,
+    config: &MapConfig,
     chunk: Chunk,
     texture: Handle<Image>,
     position: Position,
 ) {
     // Where in the map to to start rendering the chunk, based `position`
-    let horizontal_shift = CHUNK_SIZE * (position.x as f32 - 1.0);
-    let horizontal_start_pos = (CHUNK_TILE_COUNT as f32 / 2. * TILE_SIZE) + (horizontal_shift);
-    let vertical_shift = CHUNK_SIZE * (position.y as f32 - 1.0);
-    let vertical_start_pos = (CHUNK_TILE_COUNT as f32 / 2. * TILE_SIZE) + (vertical_shift);
+    let horizontal_shift = config.chunk_size() * (position.x as f32 - 1.0);
+    let horizontal_start_pos =
+        (config.chunk_tile_count as f32 / 2. * config.tile_size) + (horizontal_shift);
+    let vertical_shift = config.chunk_size() * (position.y as f32 - 1.0);
+    let vertical_start_pos =
+        (config.chunk_tile_count as f32 / 2. * config.tile_size) + (vertical_shift);
 
     let chunk_id = commands
         .spawn((
@@ -203,18 +237,19 @@ fn spawn_chunk(
 }
 
 /// Convert a [Chunk] and its data into a bevy [bevy_render::texture::image::Image] to be used for creating textures.
-fn chunk_to_image(chunk: &Chunk) -> Image {
-    let mut dyn_image = DynamicImage::new_rgb16(CHUNK_SIZE as u32, CHUNK_SIZE as u32);
+fn chunk_to_image(chunk: &Chunk, config: &MapConfig) -> Image {
+    let mut dyn_image =
+        DynamicImage::new_rgb8(config.chunk_size() as u32, config.chunk_size() as u32);
 
     // Short circuit and fill image completely with one colour if all tiles are the same.
     if let Some(tile_type) = chunk.is_uniform_type() {
         let color: Color = tile_type.into();
         draw_filled_rect_mut(
             &mut dyn_image,
-            Rect::at(0, 0).of_size(CHUNK_SIZE as u32, CHUNK_SIZE as u32),
+            Rect::at(0, 0).of_size(config.chunk_size() as u32, config.chunk_size() as u32),
             Rgba(color.as_rgba_u8()),
         );
-        return Image::from_dynamic(dyn_image, false, RenderAssetUsages::RENDER_WORLD);
+        return Image::from_dynamic(dyn_image, true, RenderAssetUsages::RENDER_WORLD);
     }
 
     for (row_index, row) in chunk.0.iter().rev().enumerate() {
@@ -224,14 +259,14 @@ fn chunk_to_image(chunk: &Chunk) -> Image {
             draw_filled_rect_mut(
                 &mut dyn_image,
                 Rect::at(
-                    tile_index as i32 * TILE_SIZE as i32,
-                    row_index as i32 * TILE_SIZE as i32,
+                    tile_index as i32 * config.tile_size as i32,
+                    row_index as i32 * config.tile_size as i32,
                 )
-                .of_size(TILE_SIZE as u32, TILE_SIZE as u32),
+                .of_size(config.tile_size as u32, config.tile_size as u32),
                 Rgba(color.as_rgba_u8()),
             )
         }
     }
 
-    Image::from_dynamic(dyn_image, false, RenderAssetUsages::RENDER_WORLD)
+    Image::from_dynamic(dyn_image, true, RenderAssetUsages::RENDER_WORLD)
 }

@@ -1,6 +1,6 @@
 use bevy::ecs::component::Component;
 
-use super::CHUNK_SIZE;
+use super::config::MapConfig;
 
 #[derive(Component, Clone, Copy, PartialEq, Eq, Debug, Hash)]
 pub struct Position {
@@ -8,11 +8,11 @@ pub struct Position {
     pub y: i32,
 }
 
-impl From<(f32, f32)> for Position {
-    fn from(value: (f32, f32)) -> Self {
+impl Position {
+    pub fn from_xy(value: (f32, f32), map_config: &MapConfig) -> Self {
         Position {
-            x: (value.0 / CHUNK_SIZE) as i32,
-            y: (value.1 / CHUNK_SIZE) as i32,
+            x: (value.0 / map_config.chunk_size()) as i32,
+            y: (value.1 / map_config.chunk_size()) as i32,
         }
     }
 }

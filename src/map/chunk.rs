@@ -2,10 +2,9 @@ use bevy::ecs::component::Component;
 use strum::IntoEnumIterator;
 
 use super::tile_type::TileType;
-use super::CHUNK_TILE_COUNT;
 
 #[derive(Component)]
-pub struct Chunk(pub [[TileType; CHUNK_TILE_COUNT]; CHUNK_TILE_COUNT]);
+pub struct Chunk(pub Vec<Vec<TileType>>);
 
 impl Chunk {
     /// Returns the tile type of all of the tiles if the chunk only contains one tile type.

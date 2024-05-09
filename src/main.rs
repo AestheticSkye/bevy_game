@@ -1,11 +1,12 @@
 mod camera;
+mod debug;
 mod map;
 mod player;
 
 use bevy::log::LogPlugin;
 use bevy::prelude::*;
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use camera::CameraPlugin;
+use debug::DebugPlugin;
 use map::MapPlugin;
 use player::PlayerPlugin;
 
@@ -22,8 +23,8 @@ fn main() {
             MapPlugin,
             PlayerPlugin,
             CameraPlugin,
+            DebugPlugin,
         ))
-        .add_plugins(WorldInspectorPlugin::new())
         .add_systems(Update, bevy::window::close_on_esc)
         .run();
 }

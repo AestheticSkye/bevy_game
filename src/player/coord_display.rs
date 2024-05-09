@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
 use super::Player;
+use crate::map::config::MapConfig;
 use crate::map::position::Position;
-use crate::map::TILE_SIZE;
 
 #[derive(Component)]
 pub struct CoordLabel;
@@ -42,6 +42,7 @@ pub fn setup_coords(mut commands: Commands, asset_server: Res<AssetServer>) {
 pub fn update_coords(
     player_pos: Query<&Transform, With<Player>>,
     mut coord_text: Query<&mut Text, With<CoordLabel>>,
+    map_config: Res<MapConfig>,
 ) {
     let Ok(transform) = player_pos.get_single() else {
         return;
@@ -53,11 +54,15 @@ pub fn update_coords(
 
     let (x, y) = (transform.translation.x, transform.translation.y);
 
-    let chunk_position = Position::from((x, y));
+    let chunk_position = Position::from_xy((x, y), &map_config);
 
     let chunk_position = format!("{} {}\n", chunk_position.x, chunk_position.y);
     coord_text.sections[1].value = chunk_position;
 
-    let world_position = format!("{} {}\n", (x / TILE_SIZE) as i32, (y / TILE_SIZE) as i32);
+    let world_position = format!(
+        "{} {}\n",
+        (x / map_config.tile_size) as i32,
+        (y / map_config.tile_size) as i32
+    );
     coord_text.sections[3].value = world_position;
 }

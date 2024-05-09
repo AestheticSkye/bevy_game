@@ -5,6 +5,7 @@ use strum::EnumIter;
 pub enum TileType {
     Water,
     DeepWater,
+    HighGrass,
     Grass,
     Sand,
 }
@@ -12,11 +13,13 @@ pub enum TileType {
 impl From<TileType> for Color {
     fn from(val: TileType) -> Self {
         match val {
-            TileType::Water => Color::BLUE,
-            TileType::Grass => Color::rgb(0.0705, 0.5215, 0.0627),
-            TileType::Sand => Color::rgb(0.9843, 0.8823, 0.6627),
-            TileType::DeepWater => Color::rgb(0.011, 0.0, 0.8),
+            TileType::Water => Color::hex("2600FE"),
+            TileType::DeepWater => Color::hex("2200E6"),
+            TileType::Grass => Color::hex("54BE44"),
+            TileType::HighGrass => Color::hex("4AAD40"),
+            TileType::Sand => Color::hex("FDF1D4"),
         }
+        .unwrap()
     }
 }
 
@@ -26,7 +29,9 @@ impl From<&TileType> for Color {
 
 impl From<f64> for TileType {
     fn from(val: f64) -> Self {
-        if val > 0.1 {
+        if val > 0.4 {
+            TileType::HighGrass
+        } else if val > 0.1 {
             TileType::Grass
         } else if val > 0.0 {
             TileType::Sand
