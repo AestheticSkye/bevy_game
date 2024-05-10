@@ -89,23 +89,28 @@ pub fn sprite_movement(
 
     let mut direction = Vec3::ZERO;
 
-    if keyboard_input.any_pressed([KeyCode::ArrowLeft, KeyCode::KeyA]) {
-        direction += Vec3::new(-1.0, 0.0, 0.0);
-        player.facing_direction = Direction::Left;
-        player.start_walk_animation(false);
-    }
-    if keyboard_input.any_pressed([KeyCode::ArrowRight, KeyCode::KeyD]) {
-        direction += Vec3::new(1.0, 0.0, 0.0);
-        player.facing_direction = Direction::Right;
-        player.start_walk_animation(false);
-    }
-    if keyboard_input.any_pressed([KeyCode::ArrowUp, KeyCode::KeyW]) {
-        direction += Vec3::new(0.0, 1.0, 0.0);
-        player.start_walk_animation(false);
-    }
-    if keyboard_input.any_pressed([KeyCode::ArrowDown, KeyCode::KeyS]) {
-        direction += Vec3::new(0.0, -1.0, 0.0);
-        player.start_walk_animation(true);
+    for key_press in keyboard_input.get_pressed() {
+        match key_press {
+            KeyCode::ArrowLeft | KeyCode::KeyA => {
+                direction.x += -1.0;
+                player.facing_direction = Direction::Left;
+                player.start_walk_animation(false);
+            }
+            KeyCode::ArrowRight | KeyCode::KeyD => {
+                direction.x += 1.0;
+                player.facing_direction = Direction::Right;
+                player.start_walk_animation(false);
+            }
+            KeyCode::ArrowUp | KeyCode::KeyW => {
+                direction.y += 1.0;
+                player.start_walk_animation(false);
+            }
+            KeyCode::ArrowDown | KeyCode::KeyS => {
+                direction.y += -1.0;
+                player.start_walk_animation(true);
+            }
+            _ => {}
+        }
     }
 
     if direction.length() > 0.0 {
