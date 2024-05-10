@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use super::Player;
 use crate::map::config::MapConfig;
 use crate::map::position::Position;
+use crate::{get_single, get_single_mut};
 
 #[derive(Component)]
 pub struct CoordLabel;
@@ -44,13 +45,8 @@ pub fn update_coords(
     mut coord_text: Query<&mut Text, With<CoordLabel>>,
     map_config: Res<MapConfig>,
 ) {
-    let Ok(transform) = player_pos.get_single() else {
-        return;
-    };
-
-    let Ok(mut coord_text) = coord_text.get_single_mut() else {
-        return;
-    };
+    let transform = get_single!(player_pos);
+    let mut coord_text = get_single_mut!(coord_text);
 
     let (x, y) = (transform.translation.x, transform.translation.y);
 

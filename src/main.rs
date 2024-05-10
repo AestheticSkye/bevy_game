@@ -2,6 +2,7 @@ mod camera;
 mod debug;
 mod map;
 mod player;
+mod util;
 
 use bevy::log::LogPlugin;
 use bevy::prelude::*;

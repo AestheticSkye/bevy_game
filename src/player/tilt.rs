@@ -3,6 +3,7 @@ use std::time::Duration;
 use bevy::prelude::*;
 
 use super::{Direction, Player};
+use crate::get_single_mut;
 
 const TILT_SPEED: f32 = 0.25;
 const TILT_RADIUS: f32 = 0.25;
@@ -27,9 +28,7 @@ pub fn tilt_sprite(
     time: Res<Time>,
     mut player_query: Query<(&mut Transform, &mut Player)>,
 ) {
-    let Ok((mut player_transform, mut player)) = player_query.get_single_mut() else {
-        return;
-    };
+    let (mut player_transform, mut player) = get_single_mut!(player_query);
 
     let Some(tilt) = &mut player.tilt else {
         return;

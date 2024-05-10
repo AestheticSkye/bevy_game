@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::get_single_mut;
+
 pub struct CameraPlugin;
 
 impl Plugin for CameraPlugin {
@@ -16,9 +18,7 @@ fn update_zoom(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     mut projection: Query<&mut OrthographicProjection, With<Camera>>,
 ) {
-    let Ok(mut projection) = projection.get_single_mut() else {
-        return;
-    };
+    let mut projection = get_single_mut!(projection);
 
     if projection.scale >= 0.25 && keyboard_input.pressed(KeyCode::Equal) {
         projection.scale -= 1.0 * time.delta_seconds();

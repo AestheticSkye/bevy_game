@@ -6,6 +6,7 @@ use bevy::sprite::Anchor;
 
 use self::coord_display::{setup_coords, update_coords};
 use self::tilt::{tilt_sprite, TiltTimer};
+use crate::get_single_mut;
 
 pub struct PlayerPlugin;
 
@@ -75,13 +76,8 @@ pub fn sprite_movement(
     mut player_query: Query<(&mut Transform, &mut Sprite, &mut Player)>,
     mut camera_query: Query<&mut Transform, (With<Camera>, Without<Player>)>,
 ) {
-    let Ok((mut player_transform, mut sprite, mut player)) = player_query.get_single_mut() else {
-        return;
-    };
-
-    let Ok(mut camera_transform) = camera_query.get_single_mut() else {
-        return;
-    };
+    let (mut player_transform, mut sprite, mut player) = get_single_mut!(player_query);
+    let mut camera_transform = get_single_mut!(camera_query);
 
     let mut direction = Vec3::ZERO;
 
