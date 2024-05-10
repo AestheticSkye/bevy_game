@@ -90,7 +90,7 @@ pub fn sprite_movement(
 
         player.facing_direction = Direction::Left;
         // The direction the player is facing, also used as the initial tilt direction except for when going down.
-        // This is to make the animation look uniform when it starts. Has to be declared seperately cus oWnErShIp
+        // This is to make the animation look uniform when it starts. Has to be declared separately cus oWnErShIp
         let facing_direction = player.facing_direction;
         player.start_timer(facing_direction);
     }

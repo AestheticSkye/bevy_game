@@ -30,10 +30,13 @@ impl Plugin for MapPlugin {
             .insert_resource(TileSet::default())
             .insert_resource(MapConfig::default())
             .insert_resource(NoiseMap::default())
+            .insert_resource(UnspawnedChunks::default())
             .add_systems(Startup, init_noise_map)
             .add_systems(
                 Update,
-                (chunk_reload, update_chunks).chain().after(sprite_movement),
+                (chunk_reload, calculate_chunks, spawn_chunks)
+                    .chain()
+                    .after(sprite_movement),
             );
     }
 }
@@ -41,13 +44,14 @@ impl Plugin for MapPlugin {
 #[derive(Event)]
 pub struct ChunkReloadEvent;
 
-#[derive(Resource, Default)]
+#[derive(Resource, Default, Deref, DerefMut)]
 struct NoiseMap(noisemap::NoiseMap<PerlinNoise>);
 
-#[derive(Resource, Default)]
-struct TileSet {
-    spawned_chunks: HashMap<Position, Entity>,
-}
+#[derive(Resource, Default, Deref, DerefMut)]
+struct TileSet(HashMap<Position, Entity>);
+
+#[derive(Resource, Default, Deref, DerefMut)]
+struct UnspawnedChunks(Vec<Position>);
 
 fn init_noise_map(mut noisemap: ResMut<NoiseMap>, config: Res<MapConfig>) {
     let noise = PerlinNoise::new();
@@ -61,25 +65,30 @@ fn init_noise_map(mut noisemap: ResMut<NoiseMap>, config: Res<MapConfig>) {
 fn chunk_reload(
     mut commands: Commands,
     mut ev_chunk_reload: EventReader<ChunkReloadEvent>,
+    mut noisemap: ResMut<NoiseMap>,
     mut tileset: ResMut<TileSet>,
+    config: Res<MapConfig>,
 ) {
     if !ev_chunk_reload.is_empty() {
         debug!("Unloading all chunks");
-        for (_, chunk) in &tileset.spawned_chunks {
+        for (_, chunk) in tileset.iter() {
             commands.entity(*chunk).despawn();
         }
-        tileset.spawned_chunks.clear();
-        ev_chunk_reload.clear()
+        tileset.clear();
+        ev_chunk_reload.clear();
+        noisemap.0 = noisemap.set(Size::of(
+            config.chunk_tile_count as i64,
+            config.chunk_tile_count as i64,
+        ))
     }
 }
 
 /// System to spawn and despawn the games chunks depending on camera placement.
-fn update_chunks(
+fn calculate_chunks(
     mut commands: Commands,
     mut tileset: ResMut<TileSet>,
-    mut assets: ResMut<Assets<Image>>,
+    mut to_spawn: ResMut<UnspawnedChunks>,
     config: Res<MapConfig>,
-    noisemap: Res<NoiseMap>,
     camera_transform: Query<&Transform, (With<Camera>, Without<Player>)>,
     camera_projection: Query<&OrthographicProjection, With<Camera>>,
 ) {
@@ -96,9 +105,11 @@ fn update_chunks(
         camera_projection.area.height(),
     );
 
+    // Amount of chunks needed to fill the screen vertically and horizontally.
     let horizontal_chunk_count = (width / config.chunk_size()) as i32 + 1;
     let vertical_chunk_count = (height / config.chunk_size()) as i32 + 1;
 
+    // The chunk position of where the centre of the camera is.
     let camera_pos = Position::from_xy(
         (
             camera_transform.translation.x,
@@ -121,22 +132,34 @@ fn update_chunks(
         }
     }
 
-    let chunk_positions: HashSet<_> = tileset.spawned_chunks.keys().cloned().collect();
+    let chunk_positions: HashSet<_> = tileset.keys().cloned().collect();
 
-    // Chunks that are going to be on screen and need to be spawned
-    let to_spawn: Vec<_> = grid.difference(&chunk_positions).cloned().collect();
+    // Chunks that are going to be on screen and need to be spawned.
+    to_spawn.0 = grid
+        .difference(&chunk_positions)
+        .cloned()
+        .collect::<Vec<Position>>();
 
-    // Chunks that are no longer on screen and need to be despawned
+    // Chunks that are no longer on screen and need to be despawned.
     let to_despawn: Vec<_> = chunk_positions.difference(&grid).cloned().collect();
 
-    for (position, entity) in tileset.spawned_chunks.clone() {
+    for (position, entity) in tileset.clone() {
         if to_despawn.contains(&position) {
-            // info!("Despawning Chunk: {position:?}");
             commands.entity(entity).despawn();
-            tileset.spawned_chunks.remove(&position);
+            tileset.remove(&position);
         }
     }
+}
 
+/// Takes the chunk positions that were calculated in [`calculate_chunks()`] and generates and spawns them.
+fn spawn_chunks(
+    mut commands: Commands,
+    mut to_spawn: ResMut<UnspawnedChunks>,
+    mut tileset: ResMut<TileSet>,
+    mut assets: ResMut<Assets<Image>>,
+    config: Res<MapConfig>,
+    noisemap: Res<NoiseMap>,
+) {
     if to_spawn.is_empty() {
         return;
     }
@@ -146,7 +169,7 @@ fn update_chunks(
     let chunk_package: Vec<(Position, Chunk, Image)> = to_spawn
         .par_iter()
         .map(|position| {
-            let chunk = generate_chunk(*position, &noisemap.0, &config);
+            let chunk = generate_chunk(*position, &noisemap, &config);
             let texture = chunk_to_image(&chunk, &config);
             (*position, chunk, texture)
         })
@@ -158,7 +181,7 @@ fn update_chunks(
         .into_iter()
         .for_each(|(position, chunk, texture)| {
             let texture = assets.add(texture);
-            spawn_chunk(
+            render_chunk(
                 &mut commands,
                 &mut tileset,
                 &config,
@@ -168,13 +191,15 @@ fn update_chunks(
             )
         });
 
+    to_spawn.clear();
+
     let end = Instant::now();
 
     debug!(
         "Spent {:?} spawning {} chunks, for a total of {} loaded",
         end - start,
         count,
-        chunk_positions.len()
+        tileset.keys().len()
     );
 }
 
@@ -199,9 +224,9 @@ fn generate_chunk(
     Chunk(tiles)
 }
 
-/// Spawn a chunk with its given texture to the games map.
+/// Spawn & render a chunk with its given texture to the games map.
 /// `texture` must correspond to `chunk`.
-fn spawn_chunk(
+fn render_chunk(
     commands: &mut Commands,
     tileset: &mut ResMut<TileSet>,
     config: &MapConfig,
@@ -233,7 +258,7 @@ fn spawn_chunk(
         ))
         .id();
 
-    tileset.spawned_chunks.insert(position, chunk_id);
+    tileset.insert(position, chunk_id);
 }
 
 /// Convert a [Chunk] and its data into a bevy [bevy_render::texture::image::Image] to be used for creating textures.

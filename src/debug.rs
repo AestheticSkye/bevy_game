@@ -26,5 +26,11 @@ fn debug_menu(
         {
             ev_chunk_reload.send(ChunkReloadEvent);
         };
+        if ui
+            .add(egui::Slider::new(&mut map_config.chunk_tile_count, 5..=100).text("Chunk Size"))
+            .changed()
+        {
+            ev_chunk_reload.send(ChunkReloadEvent);
+        };
     });
 }
