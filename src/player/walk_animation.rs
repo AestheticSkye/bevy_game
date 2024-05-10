@@ -16,14 +16,14 @@ pub struct WalkAnimator {
 
 impl WalkAnimator {
     pub fn new(direction: Direction) -> Self {
-        WalkAnimator {
+        Self {
             timer: Timer::from_seconds(0.0, TimerMode::Repeating),
             direction,
         }
     }
 }
 
-/// If the [Player] has a [WalkAnimator] active, tilt the [Sprite] in the corresponding direction each time the timer runs out.
+/// If the [`Player`] has a [`WalkAnimator`] active, tilt the [`Sprite`] in the corresponding direction each time the timer runs out.
 pub fn walk_animation(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,

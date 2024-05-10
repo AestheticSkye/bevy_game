@@ -10,7 +10,7 @@ pub struct Position {
 
 impl Position {
     pub fn from_xy(value: (f32, f32), map_config: &MapConfig) -> Self {
-        Position {
+        Self {
             x: (value.0 / map_config.chunk_size()) as i32,
             y: (value.1 / map_config.chunk_size()) as i32,
         }

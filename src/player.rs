@@ -52,10 +52,10 @@ pub enum Direction {
 }
 
 impl Direction {
-    fn next(self) -> Self {
+    const fn next(self) -> Self {
         match self {
-            Direction::Right => Direction::Left,
-            Direction::Left => Direction::Right,
+            Self::Right => Self::Left,
+            Self::Left => Self::Right,
         }
     }
 }
