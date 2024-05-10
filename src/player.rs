@@ -1,11 +1,11 @@
 mod coord_display;
-mod tilt;
+mod walk_animation;
 
 use bevy::prelude::*;
 use bevy::sprite::Anchor;
 
 use self::coord_display::{setup_coords, update_coords};
-use self::tilt::{tilt_sprite, TiltTimer};
+use self::walk_animation::{walk_animation, WalkAnimator};
 use crate::get_single_mut;
 
 pub struct PlayerPlugin;
@@ -14,7 +14,7 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, (setup, setup_coords)).add_systems(
             Update,
-            (sprite_movement, tilt_sprite, update_coords).chain(),
+            (sprite_movement, walk_animation, update_coords).chain(),
         );
     }
 }
@@ -24,14 +24,22 @@ const PLAYER_SPEED: f32 = 200.;
 #[derive(Component, Default)]
 pub struct Player {
     facing_direction: Direction,
-    tilt:             Option<TiltTimer>,
+    /// Stores the state of players [Sprites](Sprite) walk animation.
+    /// Should be [None] if the player is not moving
+    walk_animator:    Option<WalkAnimator>,
 }
 
 impl Player {
     /// Starts a timer for walking animation if one doesnt exist already.
-    fn start_timer(&mut self, direction: Direction) {
-        if self.tilt.is_none() {
-            self.tilt = Some(TiltTimer::new(direction));
+    fn start_walk_animation(&mut self, inverted: bool) {
+        let direction = if inverted {
+            self.facing_direction.next()
+        } else {
+            self.facing_direction
+        };
+
+        if self.walk_animator.is_none() {
+            self.walk_animator = Some(WalkAnimator::new(direction));
         }
     }
 }
@@ -83,31 +91,21 @@ pub fn sprite_movement(
 
     if keyboard_input.any_pressed([KeyCode::ArrowLeft, KeyCode::KeyA]) {
         direction += Vec3::new(-1.0, 0.0, 0.0);
-
         player.facing_direction = Direction::Left;
-        // The direction the player is facing, also used as the initial tilt direction except for when going down.
-        // This is to make the animation look uniform when it starts. Has to be declared separately cus oWnErShIp
-        let facing_direction = player.facing_direction;
-        player.start_timer(facing_direction);
+        player.start_walk_animation(false);
     }
     if keyboard_input.any_pressed([KeyCode::ArrowRight, KeyCode::KeyD]) {
         direction += Vec3::new(1.0, 0.0, 0.0);
-
         player.facing_direction = Direction::Right;
-        let facing_direction = player.facing_direction;
-        player.start_timer(facing_direction);
+        player.start_walk_animation(false);
     }
     if keyboard_input.any_pressed([KeyCode::ArrowUp, KeyCode::KeyW]) {
         direction += Vec3::new(0.0, 1.0, 0.0);
-
-        let facing_direction = player.facing_direction;
-        player.start_timer(facing_direction);
+        player.start_walk_animation(false);
     }
     if keyboard_input.any_pressed([KeyCode::ArrowDown, KeyCode::KeyS]) {
         direction += Vec3::new(0.0, -1.0, 0.0);
-
-        let facing_direction = player.facing_direction.next();
-        player.start_timer(facing_direction);
+        player.start_walk_animation(true);
     }
 
     if direction.length() > 0.0 {

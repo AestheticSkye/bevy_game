@@ -9,28 +9,29 @@ const TILT_SPEED: f32 = 0.25;
 const TILT_RADIUS: f32 = 0.25;
 
 #[derive(Component)]
-pub struct TiltTimer {
+pub struct WalkAnimator {
     timer:     Timer,
     direction: Direction,
 }
 
-impl TiltTimer {
+impl WalkAnimator {
     pub fn new(direction: Direction) -> Self {
-        TiltTimer {
+        WalkAnimator {
             timer: Timer::from_seconds(0.0, TimerMode::Repeating),
             direction,
         }
     }
 }
 
-pub fn tilt_sprite(
+/// If the [Player] has a [WalkAnimator] active, tilt the [Sprite] in the corresponding direction each time the timer runs out.
+pub fn walk_animation(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
     mut player_query: Query<(&mut Transform, &mut Player)>,
 ) {
     let (mut player_transform, mut player) = get_single_mut!(player_query);
 
-    let Some(tilt) = &mut player.tilt else {
+    let Some(tilt) = &mut player.walk_animator else {
         return;
     };
 
@@ -59,6 +60,6 @@ pub fn tilt_sprite(
         KeyCode::KeyS,
     ]) {
         player_transform.rotation = Quat::default();
-        player.tilt = None;
+        player.walk_animator = None;
     }
 }
