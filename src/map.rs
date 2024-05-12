@@ -19,31 +19,26 @@ use self::chunk_position::ChunkPosition;
 use self::config::MapConfig;
 use crate::debug::debug_menu;
 use crate::get_single;
-use crate::player::{sprite_movement, Player};
+use crate::player::sprite_movement;
 
-pub struct MapPlugin;
-
-impl Plugin for MapPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_event::<ChunkReloadEvent>()
-            .init_resource::<Map>()
-            .init_resource::<MapConfig>()
-            .init_resource::<NoiseMap>()
-            .init_resource::<UnspawnedChunks>()
-            .init_state::<ChunkBorderState>()
-            .add_systems(Startup, init_noise_map)
-            .add_systems(
-                Update,
-                (
-                    (update_noisemap, chunk_unload).run_if(on_event::<ChunkReloadEvent>()),
-                    calculate_chunks,
-                    spawn_chunks,
-                )
-                    .chain()
-                    .after(sprite_movement)
-                    .before(debug_menu),
-            );
-    }
+pub fn map_plugin(app: &mut App) {
+    app.add_event::<ChunkReloadEvent>()
+        .init_resource::<Map>()
+        .init_resource::<MapConfig>()
+        .init_resource::<NoiseMap>()
+        .init_resource::<UnspawnedChunks>()
+        .init_state::<ChunkBorderState>()
+        .add_systems(
+            Update,
+            (
+                (update_noisemap, chunk_unload).run_if(on_event::<ChunkReloadEvent>()),
+                calculate_chunks,
+                spawn_chunks,
+            )
+                .chain()
+                .after(sprite_movement)
+                .before(debug_menu),
+        );
 }
 
 #[derive(States, Debug, Default, Copy, Clone, PartialEq, Eq, Hash)]
@@ -74,8 +69,25 @@ impl From<ChunkBorderState> for bool {
 #[derive(Event)]
 pub struct ChunkReloadEvent;
 
-#[derive(Resource, Default, Deref, DerefMut)]
+#[derive(Resource, Deref, DerefMut)]
 struct NoiseMap(noisemap::NoiseMap<PerlinNoise>);
+
+impl FromWorld for NoiseMap {
+    fn from_world(world: &mut World) -> Self {
+        let config = world
+            .get_resource::<MapConfig>()
+            .expect("NoiseMap must be initialised before MapConfig");
+
+        let noise = PerlinNoise::new();
+
+        Self(
+            noisemap::NoiseMap::new(noise)
+        .set(Seed::of(rand::random::<i64>())) // Todo: Convert this into a proper seed system
+        .set(Size::of(config.chunk_tile_count as i64, config.chunk_tile_count as i64))
+        .set(Step::of(0.01, 0.01)),
+        )
+    }
+}
 
 #[derive(Resource, Default, Deref, DerefMut)]
 struct Map(HashMap<ChunkPosition, Entity>);
@@ -84,15 +96,6 @@ struct Map(HashMap<ChunkPosition, Entity>);
 /// [`calculate_chunks`] that will be then generated and spawned by [`spawn_chunks`].
 #[derive(Resource, Default, Deref, DerefMut)]
 struct UnspawnedChunks(Vec<ChunkPosition>);
-
-fn init_noise_map(mut noisemap: ResMut<NoiseMap>, config: Res<MapConfig>) {
-    let noise = PerlinNoise::new();
-
-    noisemap.0 = noisemap::NoiseMap::new(noise)
-        .set(Seed::of(rand::random::<i64>())) // Todo: Convert this into a proper seed system
-        .set(Size::of(config.chunk_tile_count as i64, config.chunk_tile_count as i64))
-        .set(Step::of(0.01, 0.01));
-}
 
 /// Update the [`NoiseMap`] if its config has changed.
 fn update_noisemap(mut noisemap: ResMut<NoiseMap>, config: Res<MapConfig>) {
@@ -124,7 +127,7 @@ fn calculate_chunks(
     mut map: ResMut<Map>,
     mut unspawned_chunks: ResMut<UnspawnedChunks>,
     config: Res<MapConfig>,
-    camera_transform: Query<&Transform, (With<Camera>, Without<Player>)>,
+    camera_transform: Query<&Transform, With<Camera>>,
     camera_projection: Query<&OrthographicProjection, With<Camera>>,
 ) {
     let camera_transform = get_single!(camera_transform);

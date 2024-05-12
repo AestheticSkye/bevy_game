@@ -10,15 +10,11 @@ use self::coord_display::{setup_coords, update_coords};
 use self::walk_animation::{walk_animation, WalkAnimator};
 use crate::get_single_mut;
 
-pub struct PlayerPlugin;
-
-impl Plugin for PlayerPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Startup, (setup, setup_coords)).add_systems(
-            Update,
-            (sprite_movement, walk_animation, update_coords).chain(),
-        );
-    }
+pub fn player_plugin(app: &mut App) {
+    app.add_systems(Startup, (setup, setup_coords)).add_systems(
+        Update,
+        (sprite_movement, walk_animation, update_coords).chain(),
+    );
 }
 
 const PLAYER_SPEED: f32 = 200.;

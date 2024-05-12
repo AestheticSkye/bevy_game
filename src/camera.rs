@@ -4,13 +4,9 @@ use bevy::prelude::*;
 
 use crate::get_single_mut;
 
-pub struct CameraPlugin;
-
-impl Plugin for CameraPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup)
-            .add_systems(Update, update_zoom);
-    }
+pub fn camera_plugin(app: &mut App) {
+    app.add_systems(Startup, setup)
+        .add_systems(Update, update_zoom);
 }
 
 fn setup(mut commands: Commands) { commands.spawn(Camera2dBundle::default()); }

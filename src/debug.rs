@@ -8,13 +8,9 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use crate::map::config::MapConfig;
 use crate::map::{ChunkBorderState, ChunkReloadEvent};
 
-pub struct DebugPlugin;
-
-impl Plugin for DebugPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_plugins(WorldInspectorPlugin::new())
-            .add_systems(Update, debug_menu);
-    }
+pub fn debug_plugin(app: &mut App) {
+    app.add_plugins(WorldInspectorPlugin::new())
+        .add_systems(Update, debug_menu);
 }
 
 pub fn debug_menu(

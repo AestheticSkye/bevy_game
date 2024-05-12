@@ -13,10 +13,10 @@ mod util;
 
 use bevy::log::LogPlugin;
 use bevy::prelude::*;
-use camera::CameraPlugin;
-use debug::DebugPlugin;
-use map::MapPlugin;
-use player::PlayerPlugin;
+use camera::camera_plugin;
+use debug::debug_plugin;
+use map::map_plugin;
+use player::player_plugin;
 
 fn main() {
     App::new()
@@ -28,10 +28,10 @@ fn main() {
                     update_subscriber: None,
                 })
                 .set(ImagePlugin::default_nearest()),
-            MapPlugin,
-            PlayerPlugin,
-            CameraPlugin,
-            DebugPlugin,
+            map_plugin,
+            player_plugin,
+            camera_plugin,
+            debug_plugin,
         ))
         .add_systems(Update, bevy::window::close_on_esc)
         .run();
