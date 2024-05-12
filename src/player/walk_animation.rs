@@ -44,7 +44,7 @@ pub fn walk_animation(
             Direction::Left => transform.rotate_z(-TILT_RADIUS),
         }
         player_transform.rotation = transform.rotation;
-        // Make sure the timer has a proper timings after
+        // Make sure the timer has a proper timings after running for the first time.
         tilt.timer.set_duration(Duration::from_secs_f32(TILT_SPEED));
         tilt.direction = tilt.direction.next();
     }

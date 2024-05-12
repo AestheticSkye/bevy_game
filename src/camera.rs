@@ -1,3 +1,5 @@
+//! Camera and zoom functionality.
+
 use bevy::prelude::*;
 
 use crate::get_single_mut;

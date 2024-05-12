@@ -1,3 +1,5 @@
+//! Player movement and animation.
+
 mod coord_display;
 mod walk_animation;
 

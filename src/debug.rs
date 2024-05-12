@@ -1,3 +1,5 @@
+//! Debug menus.
+
 use bevy::prelude::*;
 use bevy_egui::egui::Checkbox;
 use bevy_egui::{egui, EguiContexts};

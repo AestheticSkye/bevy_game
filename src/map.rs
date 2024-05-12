@@ -1,3 +1,5 @@
+//! Map generation and rendering.
+
 mod chunk;
 pub mod chunk_position;
 pub mod config;
@@ -33,7 +35,7 @@ impl Plugin for MapPlugin {
             .add_systems(
                 Update,
                 (
-                    chunk_unload.run_if(on_event::<ChunkReloadEvent>()),
+                    (update_noisemap, chunk_unload).run_if(on_event::<ChunkReloadEvent>()),
                     calculate_chunks,
                     spawn_chunks,
                 )
@@ -92,15 +94,21 @@ fn init_noise_map(mut noisemap: ResMut<NoiseMap>, config: Res<MapConfig>) {
         .set(Step::of(0.01, 0.01));
 }
 
+/// Update the [`NoiseMap`] if its config has changed.
+fn update_noisemap(mut noisemap: ResMut<NoiseMap>, config: Res<MapConfig>) {
+    noisemap.0 = noisemap.set(Size::of(
+        config.chunk_tile_count as i64,
+        config.chunk_tile_count as i64,
+    ));
+}
+
 /// If a [`ChunkReloadEvent`] is created, all chunks get unloaded & despawned to then be reloaded.
 ///
 /// Requires to be run with `.run_if(on_event::<ChunkReloadEvent>())` otherwise chunks will be unloaded every frame.
 fn chunk_unload(
     mut commands: Commands,
     mut ev_chunk_reload: EventReader<ChunkReloadEvent>,
-    mut noisemap: ResMut<NoiseMap>,
     mut map: ResMut<Map>,
-    config: Res<MapConfig>,
 ) {
     debug!("Unloading all chunks");
     for (_, chunk) in map.iter() {
@@ -108,10 +116,6 @@ fn chunk_unload(
     }
     map.clear();
     ev_chunk_reload.clear();
-    noisemap.0 = noisemap.set(Size::of(
-        config.chunk_tile_count as i64,
-        config.chunk_tile_count as i64,
-    ));
 }
 
 /// System to spawn and despawn the games chunks depending on the [`Camera`] transform.
