@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
 use super::Player;
+use crate::map::chunk_position::ChunkPosition;
 use crate::map::config::MapConfig;
-use crate::map::position::Position;
 use crate::{get_single, get_single_mut};
 
 #[derive(Component)]
@@ -50,7 +50,7 @@ pub fn update_coords(
 
     let (x, y) = (transform.translation.x, transform.translation.y);
 
-    let chunk_position = Position::from_xy((x, y), &map_config);
+    let chunk_position = ChunkPosition::from_xy((x, y), &map_config);
 
     let chunk_position = format!("{} {}\n", chunk_position.x, chunk_position.y);
     coord_text.sections[1].value = chunk_position;
