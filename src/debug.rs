@@ -1,9 +1,10 @@
 use bevy::prelude::*;
+use bevy_egui::egui::Checkbox;
 use bevy_egui::{egui, EguiContexts};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use crate::map::config::MapConfig;
-use crate::map::ChunkReloadEvent;
+use crate::map::{ChunkBorderState, ChunkReloadEvent};
 
 pub struct DebugPlugin;
 
@@ -14,10 +15,12 @@ impl Plugin for DebugPlugin {
     }
 }
 
-fn debug_menu(
+pub fn debug_menu(
     mut contexts: EguiContexts,
     mut ev_chunk_reload: EventWriter<ChunkReloadEvent>,
     mut map_config: ResMut<MapConfig>,
+    mut next_chunk_borders_state: ResMut<NextState<ChunkBorderState>>,
+    chunk_borders_state: Res<State<ChunkBorderState>>,
 ) {
     egui::Window::new("Debug").show(contexts.ctx_mut(), |ui| {
         if ui
@@ -32,5 +35,13 @@ fn debug_menu(
         {
             ev_chunk_reload.send(ChunkReloadEvent);
         };
+        let original_state = (*chunk_borders_state.get()).into();
+        let mut chunk_borders = original_state;
+        ui.add(Checkbox::new(&mut chunk_borders, "Chunk Borders"));
+
+        if original_state != chunk_borders {
+            next_chunk_borders_state.set(chunk_borders_state.next());
+            ev_chunk_reload.send(ChunkReloadEvent);
+        }
     });
 }

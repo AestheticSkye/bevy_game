@@ -2,7 +2,7 @@ use bevy::render::color::Color;
 use strum::EnumIter;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIter)]
-pub enum TileType {
+pub enum TileKind {
     Water,
     DeepWater,
     HighGrass,
@@ -11,24 +11,24 @@ pub enum TileType {
 }
 
 #[allow(clippy::fallible_impl_from)]
-impl From<TileType> for Color {
-    fn from(val: TileType) -> Self {
+impl From<TileKind> for Color {
+    fn from(val: TileKind) -> Self {
         match val {
-            TileType::Water => Self::hex("2600FE"),
-            TileType::DeepWater => Self::hex("2200E6"),
-            TileType::Grass => Self::hex("54BE44"),
-            TileType::HighGrass => Self::hex("4AAD40"),
-            TileType::Sand => Self::hex("FDF1D4"),
+            TileKind::Water => Self::hex("2600FE"),
+            TileKind::DeepWater => Self::hex("2200E6"),
+            TileKind::Grass => Self::hex("54BE44"),
+            TileKind::HighGrass => Self::hex("4AAD40"),
+            TileKind::Sand => Self::hex("FDF1D4"),
         }
         .unwrap()
     }
 }
 
-impl From<&TileType> for Color {
-    fn from(val: &TileType) -> Self { (*val).into() }
+impl From<&TileKind> for Color {
+    fn from(val: &TileKind) -> Self { (*val).into() }
 }
 
-impl From<f64> for TileType {
+impl From<f64> for TileKind {
     fn from(val: f64) -> Self {
         if val > 0.4 {
             Self::HighGrass
@@ -44,6 +44,6 @@ impl From<f64> for TileType {
     }
 }
 
-impl From<&f64> for TileType {
+impl From<&f64> for TileKind {
     fn from(val: &f64) -> Self { (*val).into() }
 }
