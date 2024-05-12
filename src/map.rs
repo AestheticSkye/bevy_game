@@ -17,7 +17,6 @@ use worldgen::world::Size;
 use self::chunk::Chunk;
 use self::chunk_position::ChunkPosition;
 use self::config::MapConfig;
-use crate::debug::debug_menu;
 use crate::get_single;
 use crate::player::sprite_movement;
 
@@ -36,8 +35,7 @@ pub fn map_plugin(app: &mut App) {
                 spawn_chunks,
             )
                 .chain()
-                .after(sprite_movement)
-                .before(debug_menu),
+                .after(sprite_movement),
         );
 }
 
