@@ -9,6 +9,8 @@ pub struct MapConfig {
     pub tile_size:        f32,
     /// The amount of tiles in a chunk.
     pub chunk_tile_count: usize,
+    /// The seed for the noisemap.
+    pub seed:             u64,
 }
 
 impl MapConfig {
@@ -21,6 +23,7 @@ impl Default for MapConfig {
         Self {
             tile_size:        TILE_SIZE,
             chunk_tile_count: CHUNK_TILE_COUNT,
+            seed:             0,
         }
     }
 }

@@ -80,7 +80,7 @@ impl FromWorld for NoiseMap {
 
         Self(
             noisemap::NoiseMap::new(noise)
-        .set(Seed::of(rand::random::<i64>())) // Todo: Convert this into a proper seed system
+        .set(Seed::of(config.seed)) // Todo: Convert this into a proper seed system
         .set(Size::of(config.chunk_tile_count as i64, config.chunk_tile_count as i64))
         .set(Step::of(0.01, 0.01)),
         )
@@ -97,10 +97,13 @@ struct UnspawnedChunks(Vec<ChunkPosition>);
 
 /// Update the [`NoiseMap`] if its config has changed.
 fn update_noisemap(mut noisemap: ResMut<NoiseMap>, config: Res<MapConfig>) {
-    noisemap.0 = noisemap.set(Size::of(
-        config.chunk_tile_count as i64,
-        config.chunk_tile_count as i64,
-    ));
+    info!("{}", config.seed);
+    noisemap.0 = noisemap
+        .set(Size::of(
+            config.chunk_tile_count as i64,
+            config.chunk_tile_count as i64,
+        ))
+        .set(Seed::of(config.seed));
 }
 
 /// If a [`ChunkReloadEvent`] is created, all chunks get unloaded & despawned to then be reloaded.
