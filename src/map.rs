@@ -97,7 +97,6 @@ struct UnspawnedChunks(Vec<ChunkPosition>);
 
 /// Update the [`NoiseMap`] if its config has changed.
 fn update_noisemap(mut noisemap: ResMut<NoiseMap>, config: Res<MapConfig>) {
-    info!("{}", config.seed);
     noisemap.0 = noisemap
         .set(Size::of(
             config.chunk_tile_count as i64,

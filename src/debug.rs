@@ -35,9 +35,10 @@ fn debug_menu(
     }
 
     egui::Window::new("Debug").show(contexts.ctx_mut(), |ui| {
-        if ui
-            .text_edit_singleline(&mut debug_state.seed_text)
-            .changed()
+        let textfield_response = ui.text_edit_singleline(&mut debug_state.seed_text);
+        if textfield_response
+            .ctx
+            .input(|i| i.key_pressed(egui::Key::Enter))
         {
             let hex_string = &sha256::digest(&debug_state.seed_text)[0..16];
             let seed = u64::from_str_radix(hex_string, 16).expect("Failed to parse seed");
@@ -45,11 +46,16 @@ fn debug_menu(
             ev_chunk_reload.send(ChunkReloadEvent);
         };
 
-        if ui.button("Random Seed").clicked() {
-            map_config.seed = rand::random::<u64>();
-            debug_state.seed_text.clear();
-            ev_chunk_reload.send(ChunkReloadEvent);
-        }
+        ui.horizontal(|ui| {
+            if ui.button("Random Seed").clicked() {
+                map_config.seed = rand::random::<u64>();
+                debug_state.seed_text.clear();
+                ev_chunk_reload.send(ChunkReloadEvent);
+            }
+            if ui.button("Copy Seed").clicked() {
+                ui.output_mut(|o| o.copied_text = map_config.seed.to_string());
+            }
+        });
 
         if ui
             .add(egui::Slider::new(&mut map_config.tile_size, 1.0..=100.0).text("Tile Size"))

@@ -9,6 +9,7 @@ pedantic = "warn"
 nursery = "warn"
 
 [dependencies]
+arboard = "3.4.0"
 bevy = "0.13.2"
 bevy-inspector-egui = "0.24.0"
 bevy_egui = "0.27.0"
