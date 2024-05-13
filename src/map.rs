@@ -80,9 +80,12 @@ impl FromWorld for NoiseMap {
 
         Self(
             noisemap::NoiseMap::new(noise)
-        .set(Seed::of(config.seed)) // Todo: Convert this into a proper seed system
-        .set(Size::of(config.chunk_tile_count as i64, config.chunk_tile_count as i64))
-        .set(Step::of(0.01, 0.01)),
+                .set(Seed::of(config.seed))
+                .set(Size::of(
+                    config.chunk_tile_count as i64,
+                    config.chunk_tile_count as i64,
+                ))
+                .set(Step::of(0.01, 0.01)),
         )
     }
 }
